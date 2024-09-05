@@ -57,7 +57,7 @@ if __name__ == "__main__":
             IWA=0.3
 
         # for detector in ["nrs1","nrs2"]:
-        for detector in ["nrs2"]:
+        for detector in ["nrs1"]:
             # for filter in ["G140H","G235H","G395H"]:
             for filter in ["G140H"]:
 
@@ -143,6 +143,8 @@ if __name__ == "__main__":
                                                          mask_charge_transfer_radius=mask_charge_transfer_radius,
                                                          use_starsub1d=False)
                 # # regwvs_combdataobj_starsub1d = get_combined_regwvs(dataobj_list, use_starsub1d=True)
+                regwvs_combdataobj.set_coords2ifu()
+
                 out_filename = os.path.join(out_PSF_models,targetname+"_"+filter+"_"+detector+"_2d_point_cloud.fits")
                 save_combined_regwvs(regwvs_combdataobj, out_filename)
 
