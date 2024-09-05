@@ -196,7 +196,7 @@ if __name__ == "__main__":
                 now = datetime.datetime.now()
                 formatted_datetime = now.strftime("%Y%m%d_%H%M%S")
 
-                out_filename = os.path.join(out_PSF_models, formatted_datetime + "_2D_point_cloud_QL.png")
+                out_filename = os.path.join(out_PSF_models, formatted_datetime+"_" + targetname+"_"+filter+"_"+detector+"_2D_point_cloud_QL.png")
                 print("Saving " + out_filename)
                 plt.savefig(out_filename, dpi=300)
                 # plt.show()
