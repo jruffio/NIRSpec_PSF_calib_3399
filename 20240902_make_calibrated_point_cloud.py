@@ -168,6 +168,7 @@ if __name__ == "__main__":
                 fontsize=12
                 rad = 2 # arcsec
 
+                plt.figure()
                 myextent = [ra_vec[0] - dra / 2., ra_vec[-1] + dra / 2., dec_vec[0] - ddec / 2., dec_vec[-1] + ddec / 2.]
                 plt.imshow(np.log10(myinterpim), interpolation="nearest", origin="lower", extent=myextent)
                 # plt.clim([0,np.nanmax(myinterpim)/4.0])
