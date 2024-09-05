@@ -36,23 +36,14 @@ if __name__ == "__main__":
         os.makedirs(out_PSF_models)
     # directory where to look for the uncal files
     uncaldir = os.path.join(targetdir,"20240830_mast/03399")
-    # Filename filter for glob
-    uncal_filename_filter = "jw0339900*001_0310*_000*_nrs*_uncal.fits"
 
     crds_dir = "/stow/jruffio/data/JWST/crds_cache/"
     os.environ["WEBBPSF_PATH"] = "/stow/jruffio/data/webbPSF/webbpsf-data-1.3.0"
 
-    # if "03102" in file:
-    #     stage1dir = os.path.join(stage1dir, "G140H_stage1")
-    # elif "03102" in file:
-    #     stage1dir = os.path.join(stage1dir, "G235H_stage1")
-    # elif "03102" in file:
-    #     stage1dir = os.path.join(stage1dir, "G395H_stage1")
-
     # Target J1757132;  Ks = 11.15
     # Target HD1634665;  Ks = 6.33
-    # for targetname in ["HD1634665","J1757132"]:
-    for targetname in ["J1757132"]:
+    for targetname in ["HD1634665","J1757132"]:
+    # for targetname in ["J1757132"]:
 
         if targetname == "J1757132":
             obsnum = "obsnum01"
@@ -65,8 +56,10 @@ if __name__ == "__main__":
             model_charge_transfer=True
             IWA=0.3
 
-        for detector in ["nrs1","nrs2"]:
-            for filter in ["G140H","G235H","G395H"]:
+        # for detector in ["nrs1","nrs2"]:
+        for detector in ["nrs2"]:
+            # for filter in ["G140H","G235H","G395H"]:
+            for filter in ["G140H"]:
 
                 if filter == "G140H":
                     filename_filter = "jw0339900"+obsnum[-1::]+"001_03102_000*_"+detector+"_uncal.fits"
