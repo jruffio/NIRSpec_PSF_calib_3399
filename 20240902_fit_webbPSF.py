@@ -288,9 +288,10 @@ if __name__ == "__main__":
 
                     plt.xlim([wv_sampling[0], wv_sampling[-1]])
                     plt.xlabel("Wavelength ($\mu$m)", fontsize=fontsize)
-                    plt.ylabel("Flux density (mJy)", fontsize=fontsize)
+                    plt.ylabel("Normalized flux", fontsize=fontsize)
                     plt.gca().tick_params(axis='x', labelsize=fontsize)
                     plt.gca().tick_params(axis='y', labelsize=fontsize)
+                    plt.legend(loc="upper right")
 
 
 
@@ -328,7 +329,7 @@ if __name__ == "__main__":
 
                     plt.xlim([wv_sampling[0], wv_sampling[-1]])
                     plt.xlabel("Wavelength ($\mu$m)", fontsize=fontsize)
-                    plt.ylabel("Flux density (mJy)", fontsize=fontsize)
+                    plt.ylabel("Flux density (Jy)", fontsize=fontsize)
                     plt.gca().tick_params(axis='x', labelsize=fontsize)
                     plt.gca().tick_params(axis='y', labelsize=fontsize)
                     plt.legend(loc="upper right")
