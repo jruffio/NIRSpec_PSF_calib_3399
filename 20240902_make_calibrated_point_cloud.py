@@ -42,8 +42,8 @@ if __name__ == "__main__":
 
     # Target J1757132;  Ks = 11.15
     # Target HD1634665;  Ks = 6.33
-    for targetname in ["HD1634665","J1757132"]:
-    # for targetname in ["J1757132"]:
+    # for targetname in ["HD1634665","J1757132"]:
+    for targetname in ["J1757132"]:
 
         if targetname == "J1757132":
             obsnum = "obsnum01"
@@ -58,23 +58,23 @@ if __name__ == "__main__":
 
         # for detector in ["nrs1","nrs2"]:
         for detector in ["nrs1"]:
-            # for filter in ["G140H","G235H","G395H"]:
-            for filter in ["G140H"]:
+            # for grating in ["G140H","G235H","G395H"]:
+            for grating in ["G140H"]:
 
-                if filter == "G140H":
+                if grating == "G140H":
                     filename_filter = "jw0339900"+obsnum[-1::]+"001_03102_000*_"+detector+"_uncal.fits"
-                elif filter == "G235H":
+                elif grating == "G235H":
                     filename_filter = "jw0339900"+obsnum[-1::]+"001_03104_000*_"+detector+"_uncal.fits"
-                elif filter == "G395H":
+                elif grating == "G395H":
                     filename_filter = "jw0339900"+obsnum[-1::]+"001_03106_000*_"+detector+"_uncal.fits"
 
                 uncal_files = find_files_to_process(os.path.join(uncaldir, obsnum), filetype=filename_filter)
-                stage1_outdir = os.path.join(targetdir, targetname, filter + "_stage1")
-                stage2_outdir = os.path.join(targetdir,targetname, filter+"_stage2")
-                utils_before_cleaning_dir = os.path.join(targetdir,targetname, filter+"_utils_before_cleaning")
-                stage1_clean_outdir = os.path.join(targetdir,targetname, filter+"_stage1_cleaned")
-                stage2_clean_outdir = os.path.join(targetdir,targetname, filter+"_stage2_cleaned")
-                utils_dir = os.path.join(targetdir,targetname, filter+"_utils")
+                stage1_outdir = os.path.join(targetdir, targetname, grating + "_stage1")
+                stage2_outdir = os.path.join(targetdir,targetname, grating+"_stage2")
+                utils_before_cleaning_dir = os.path.join(targetdir,targetname, grating+"_utils_before_cleaning")
+                stage1_clean_outdir = os.path.join(targetdir,targetname, grating+"_stage1_cleaned")
+                stage2_clean_outdir = os.path.join(targetdir,targetname, grating+"_stage2_cleaned")
+                utils_dir = os.path.join(targetdir,targetname, grating+"_utils")
 
                 ##############
                 ## run_stage1
@@ -145,13 +145,56 @@ if __name__ == "__main__":
                 # # regwvs_combdataobj_starsub1d = get_combined_regwvs(dataobj_list, use_starsub1d=True)
                 regwvs_combdataobj.set_coords2ifu()
 
-                out_filename = os.path.join(out_PSF_models,targetname+"_"+filter+"_"+detector+"_2d_point_cloud.fits")
+                out_filename = os.path.join(out_PSF_models,targetname+"_"+grating+"_"+detector+"_2d_point_cloud.fits")
                 save_combined_regwvs(regwvs_combdataobj, out_filename)
 
                 ##############
                 ## Generate 2D interpolator object at a given wavelength (here the median wavelength)
+                wv_sampling = regwvs_combdataobj.wv_sampling
                 wv0 = np.nanmedian(regwvs_combdataobj.wavelengths)
+                wv0_id = np.argmin(np.abs(wv_sampling-wv0))
                 pointcloud_interp = get_2D_point_cloud_interpolator(regwvs_combdataobj,wv0)
+
+                fontsize=12
+
+                if targetname == "J1757132":
+                    import webbpsf
+
+                    nrs = webbpsf.NIRSpec()
+                    nrs.load_wss_opd_by_date(regwvs_combdataobj.priheader["DATE-BEG"])  # Load telescope state as of our observation date
+                    # nrs.image_mask = image_mask  # optional: model opaque field stop outside of the IFU aperture
+                    # nrs.pixelscale = pixelscale  # Optional: set this manually to match the drizzled cube sampling, rather than the default
+                    slicepsf_wv0 = nrs.calc_psf(monochromatic=wv0 * 1e-6,  # Wavelength, in **METERS**
+                                                fov_arcsec=60,  # angular size to simulate PSF over
+                                                oversample=10,
+                                                # output pixel scale relative to the pixelscale set above
+                                                add_distortion=False)  # skip an extra computation step that's not relevant for IFU
+                    webbpsfim = slicepsf_wv0[1].data
+                    halffov_x = 0.1 * webbpsfim.shape[1] / 2.0
+                    halffov_y = 0.1 * webbpsfim.shape[0] / 2.0
+                    x = np.linspace(-halffov_x, halffov_x, webbpsfim.shape[1], endpoint=True)
+                    y = np.linspace(-halffov_y, halffov_y, webbpsfim.shape[0], endpoint=True)
+                    webbpsf_X, webbpsf_Y = np.meshgrid(x, y)
+                    webbpsf_R = np.sqrt(webbpsf_X**2+webbpsf_Y**2)
+
+                    data_slice = regwvs_combdataobj.data[:,wv0_id]
+                    sep_slice = np.sqrt(regwvs_combdataobj.dra_as_array[:,wv0_id]**2+regwvs_combdataobj.ddec_as_array[:,wv0_id]**2)
+
+                    plt.figure(figsize=(6,6))
+                    plt.scatter(sep_slice,data_slice/np.nanmax(data_slice),label="empirical PSF profile",s=1,c="orange")
+                    plt.scatter(webbpsf_R,webbpsfim/np.nanmax(webbpsfim),label="webbpsf PSF profile",s=1,c="blue",alpha=0.5)
+                    plt.yscale("log")
+                    plt.xscale("log")
+                    plt.xlabel("Separation (as)", fontsize=fontsize)
+                    plt.ylabel("Pixel flux ratio", fontsize=fontsize)
+                    plt.gca().tick_params(axis='x', labelsize=fontsize)
+                    plt.gca().tick_params(axis='y', labelsize=fontsize)
+                    plt.legend()
+
+                    out_filename = os.path.join(out_PSF_models, targetname+"_"+grating+"_"+detector+"_PSF_profile.png")
+                    print("Saving " + out_filename)
+                    plt.savefig(out_filename, dpi=300)
+                    # plt.show()
 
                 ##############
                 ## Example for how to evaluate the interpolator object
@@ -165,7 +208,6 @@ if __name__ == "__main__":
 
                 ##############
                 ## Plot the PSF at this wavelength and save a QL
-                fontsize=12
                 rad = 2 # arcsec
 
                 plt.figure()
@@ -192,7 +234,7 @@ if __name__ == "__main__":
                 now = datetime.datetime.now()
                 formatted_datetime = now.strftime("%Y%m%d_%H%M%S")
 
-                out_filename = os.path.join(out_PSF_models, formatted_datetime+"_" + targetname+"_"+filter+"_"+detector+"_2D_point_cloud_QL.png")
+                out_filename = os.path.join(out_PSF_models, formatted_datetime+"_" + targetname+"_"+grating+"_"+detector+"_2D_point_cloud_QL.png")
                 print("Saving " + out_filename)
                 plt.savefig(out_filename, dpi=300)
                 # plt.show()

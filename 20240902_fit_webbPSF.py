@@ -61,15 +61,14 @@ if __name__ == "__main__":
         if targetname == "J1757132":
             obsnum = "obsnum01"
             mask_charge_transfer_radius = None
-            model_charge_transfer=False
-            IWA,OWA=0.1,0.5
+            # IWA,OWA=0.1,0.5
+            IWA,OWA=0.0,0.15
             flux4plotting = 0.5 #Jy
             # https://archive.stsci.edu/hlsps/reference-atlases/cdbs/current_calspec/1757132_stiswfc_005.fits
             calspec_file = os.path.join(output_dir,"1757132_stiswfc_005.fits")
         elif targetname == "HD1634665":
             obsnum = "obsnum02"
             mask_charge_transfer_radius = 0.16
-            model_charge_transfer=True
             IWA,OWA=0.3,0.5
             flux4plotting = 10 #Jy
             # https://archive.stsci.edu/hlsps/reference-atlases/cdbs/current_calspec/hd163466_stis_006.fits
@@ -95,7 +94,7 @@ if __name__ == "__main__":
                 splitbasename = os.path.basename(cleaned_cal_files[0]).split("_")
                 filename_suffix = "_webbpsf"
                 poly2d_centroid_filename = os.path.join(utils_before_cleaning_dir, splitbasename[0] + "_" + splitbasename[1] + "_" + splitbasename[3] + "_poly2d_centroid" + filename_suffix + ".txt")
-                fitpsf_filename = os.path.join(utils_dir, splitbasename[0] + "_" + splitbasename[1] + "_" + splitbasename[3] + "_fitpsf" + filename_suffix + ".fits")
+                fitpsf_filename = os.path.join(utils_dir, splitbasename[0] + "_" + splitbasename[1] + "_" + splitbasename[3] + "_fitpsf" + filename_suffix + "_IWA{0:.2f}_OWA{1:.2f}.fits".format(IWA,OWA))
 
                 mypool = mp.Pool(processes=numthreads)
 
@@ -210,7 +209,7 @@ if __name__ == "__main__":
                     myextent = [ra_vec[0] - dra / 2., ra_vec[-1] + dra / 2., dec_vec[0] - ddec / 2., dec_vec[-1] + ddec / 2.]
 
                     plt.subplot(gs[1, 0])
-                    plt1 = plt.imshow(myinterpim*1e9, interpolation="nearest", origin="lower", extent=myextent)
+                    plt1 = plt.imshow(myinterpim*1e6, interpolation="nearest", origin="lower", extent=myextent)
                     plt.clim([0,flux4plotting])
                     txt = plt.text(0.03, 0.99,
                                    "flux \n$\lambda$={0:0.3f} $\mu$m".format(wv0),
@@ -221,7 +220,7 @@ if __name__ == "__main__":
                     cb = Colorbar(ax=cbax, mappable=plt1, orientation='horizontal', ticklocation='top')
 
                     plt.subplot(gs[1, 1])
-                    plt1 = plt.imshow(best_fit_model*1e9, interpolation="nearest", origin="lower", extent=myextent)
+                    plt1 = plt.imshow(best_fit_model*1e6, interpolation="nearest", origin="lower", extent=myextent)
                     plt.clim([0,flux4plotting])
                     txt = plt.text(0.03, 0.99,
                                    "best fit model \n$\lambda$={0:0.3f} $\mu$m".format(wv0),
@@ -232,7 +231,7 @@ if __name__ == "__main__":
                     cb = Colorbar(ax=cbax, mappable=plt1, orientation='horizontal', ticklocation='top')
 
                     plt.subplot(gs[1, 2])
-                    plt1 = plt.imshow((myinterpim-best_fit_model)*1e9, interpolation="nearest", origin="lower", extent=myextent)
+                    plt1 = plt.imshow((myinterpim-best_fit_model)*1e6, interpolation="nearest", origin="lower", extent=myextent)
                     plt.clim([-flux4plotting/2.0,flux4plotting/2.0])
                     txt = plt.text(0.03, 0.99,
                                    "residuals \n$\lambda$={0:0.3f} $\mu$m".format(wv0),
@@ -303,28 +302,28 @@ if __name__ == "__main__":
                     stis_spec = stis_spec.to(u.W*u.m**-2/u.um)
                     stis_spec_Fnu = stis_spec*(stis_wvs*u.um)**2/const.c # from Flambda back to Fnu
                     stis_spec_Fnu = stis_spec_Fnu.to(u.MJy).value
-                    plt.plot(stis_wvs, stis_spec_Fnu * 1e9, linestyle=":", color="black", label="CALSPEC", linewidth=2)
+                    plt.plot(stis_wvs, stis_spec_Fnu * 1e6, linestyle=":", color="black", label="CALSPEC", linewidth=2)
 
                     interp_stis_spec = interp1d(stis_wvs,stis_spec_Fnu,bounds_error=False,fill_value=np.nan)(wv_sampling)
                     flux_calib = interp_stis_spec / _bestfit_paras[0, :, 0]
                     wherefinite = np.where(np.isfinite(flux_calib))
                     flux_calib_poly_coefs = np.polyfit(wv_sampling[wherefinite],flux_calib[wherefinite] ,deg=1)
                     print("flux calibration", flux_calib_poly_coefs)
-                    flux_calib_filename = os.path.join(output_dir, splitbasename[0] + "_" + splitbasename[1] + "_" + splitbasename[3] + "_flux_calib_IWA{0}_OWA{1}.txt".format(IWA,OWA))
+                    flux_calib_filename = os.path.join(output_dir, splitbasename[0] + "_" + splitbasename[1] + "_" + splitbasename[3] + "_flux_calib_IWA{0:.2f}_OWA{1:.2f}.txt".format(IWA,OWA))
                     np.savetxt(flux_calib_filename, [flux_calib_poly_coefs], delimiter=' ')
                     if len(glob(flux_calib_filename)) == 1:
                         flux_calib_poly_coefs = np.loadtxt(flux_calib_filename, delimiter=' ')
                         print("Load flux calibration", flux_calib_poly_coefs)
 
 
-                    plt.plot(wv_sampling, _bestfit_paras[0, :, 0] * 1e9, linestyle="-", color=color_list[0],
+                    plt.plot(wv_sampling, _bestfit_paras[0, :, 0] * 1e6, linestyle="-", color=color_list[0],
                              label="Fixed centroid", linewidth=1,alpha=0.2)
-                    plt.plot(wv_sampling, _bestfit_paras[0, :, 1] * 1e9, linestyle="--", color=color_list[2],
+                    plt.plot(wv_sampling, _bestfit_paras[0, :, 1] * 1e6, linestyle="--", color=color_list[2],
                              label="Free centroid", linewidth=1,alpha=0.2)
 
-                    plt.plot(wv_sampling, _bestfit_paras[0, :, 0] * 1e9*np.polyval(flux_calib_poly_coefs, wv_sampling), linestyle="-", color=color_list[0],
+                    plt.plot(wv_sampling, _bestfit_paras[0, :, 0] * 1e6*np.polyval(flux_calib_poly_coefs, wv_sampling), linestyle="-", color=color_list[0],
                              label="Fixed centroid (flux calibrated)", linewidth=1)
-                    plt.plot(wv_sampling, _bestfit_paras[0, :, 1] * 1e9*np.polyval(flux_calib_poly_coefs, wv_sampling), linestyle="--", color=color_list[2],
+                    plt.plot(wv_sampling, _bestfit_paras[0, :, 1] * 1e6*np.polyval(flux_calib_poly_coefs, wv_sampling), linestyle="--", color=color_list[2],
                              label="Free centroid (flux calibrated)", linewidth=1)
 
                     plt.xlim([wv_sampling[0], wv_sampling[-1]])
